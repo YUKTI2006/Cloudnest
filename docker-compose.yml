@@ -1,0 +1,40 @@
+services:
+  app:
+    build: .
+    container_name: cloudnest-python
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    read_only: true
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    environment:
+      DB_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+  web:
+    image: nginx:alpine
+    container_name: cloudnest-nginx
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+  mysql:
+    image: mysql:8
+    container_name: cloud-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - cloudnest-db-data:/var/lib/mysql
+
+volumes:
+  cloudnest-db-data:
